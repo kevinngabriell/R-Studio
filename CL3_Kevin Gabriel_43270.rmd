@@ -1,0 +1,78 @@
+UAS IS 388 Data Analysis
+title: "Groceries Analysis Using Apriori Algorithm"
+author: "Kevin Gabriel Florentino / 00000043270"
+output: html_document:
+  
+
+```{r import, message=FALSE, warning=FALSE, paged.print=TRUE}
+
+#Import Library
+library(plyr)
+library(arules)
+library(arulesViz)
+
+#Import Data
+datasetapriori = read.csv('CL3_Kevin Gabriel_43270.csv', header = FALSE)
+
+#Remove Duplicates
+datasetapriori = read.transactions('CL3_Kevin Gabriel_43270.csv', sep = ',', rm.duplicates = TRUE)
+
+summary(datasetapriori)
+
+#Make Plot
+itemFrequencyPlot(datasetapriori, topN = 15)
+
+#Apriori Algorithm 
+rules = apriori(data = datasetapriori, parameter = list(support = 0.003, confidence = 0.2))
+
+#Visualize 
+inspect(sort(rules, by = 'lift')[1:10])
+```
+
+
+
+```{r Visualization, message=FALSE, warning=FALSE}
+
+#Performing EDA 
+itemFrequencyPlot(datasetapriori, topN = 15, type="absolute",ylab = "Frequency (absolute)",main="Absolute Item Frequency")
+
+#Scatter Plot 
+plot(rules, jitter = 0)
+
+#Group Matrix
+plot(rules, method = "grouped", control = list(k=5))
+
+#50 Rules
+plot(rules[1:50], method = "graph")
+
+#Parallel Coordinates
+plot(rules[1:20], method = "paracoord")
+
+
+
+```
+
+
+
+```{r Eclat, message=FALSE, warning=FALSE}
+
+#ECLAT ALGORITHM
+
+#load library
+library (arules)
+
+#read dataset
+dataset = read.csv('CL3_Kevin Gabriel_43270.csv', header = FALSE)
+#remove duplicates
+dataset = read.transactions('CL3_Kevin Gabriel_43270.csv',sep=',', rm.duplicates = TRUE)
+summary(dataset)
+
+itemFrequencyPlot(dataset, topN = 10)
+
+#3 Times a day
+rules = eclat(data=dataset, parameter = list(support = 0.003, minlen = 2))
+#Visualize result
+inspect(sort(rules, by ='support')[1:20])
+
+
+```
