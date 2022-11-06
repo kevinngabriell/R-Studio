@@ -1,0 +1,171 @@
+title: "Dementia Prediction with Decision Tree and Naive Bayes"
+author: "Kevin Gabriel Florentino 00000043270"
+output:
+  html_document:
+    theme: cerulean
+    toc: yes
+    code_folding: hide
+---
+
+#import data
+```{r import, message=FALSE, warning=FALSE, paged.print=TRUE}
+library(ggplot2)
+library(dplyr)
+library(Hmisc)
+library(PerformanceAnalytics)
+library(cowplot)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(e1071)
+library(randomForest)
+library(gbm)
+library(Metrics)
+library(vtreat)
+library(AUC)
+library(ROCR)
+
+set.seed(123)
+Data <- read.csv("CL3_KevinGabrielFlorentino_43270.csv")
+print(sample_n(Data, 5))
+
+```
+
+#Mising value
+```{r data-manipulation, message=FALSE, warning=FALSE}
+Data <- select(Data, -Hand) 
+#drop Hand column because all objects were right-handed
+Data$SES[is.na(Data$SES)] <- median(Data$SES, na.rm = TRUE)
+Data$MMSE[is.na(Data$MMSE)] <- median(Data$MMSE, na.rm = TRUE)
+```
+
+#Data visualization
+```{r distributions, message=FALSE, warning=FALSE, paged.print=FALSE}
+Data %>%
+    select(ID, Age, CDR, M.F) %>%
+    group_by(ID, CDR, M.F) %>%
+    summarise_all(funs(min)) %>%
+    as.data.frame() %>%
+    mutate(CDR = as.factor(CDR)) %>%
+ggplot(aes(x = CDR, y = Age, fill = M.F)) + 
+    geom_violin() +
+    labs(title = "1. Distribution of Age by CDR rate",
+         fill = "Sex") +
+    theme_light()
+
+x <- Data %>%
+    select(Educ, CDR, M.F) %>%
+    mutate(CDR = as.factor(CDR)) %>%
+ggplot(aes(x = CDR, y = Educ)) + 
+    geom_jitter(aes(col = CDR), alpha = 0.6) +
+    labs(title = "x") +
+    theme_light()
+
+y <- Data %>%
+    select(SES, CDR, M.F) %>%
+    mutate(CDR = as.factor(CDR)) %>%
+ggplot(aes(x = CDR, y = SES)) + 
+    geom_jitter(aes(col = CDR), alpha = 0.6) +
+    labs(title = "x") +
+    theme_light()
+
+p <- plot_grid(x, y) 
+title <- ggdraw() + draw_label("2. Distribution of Education and Social Economic Status", fontface='bold')
+plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
+
+x <- Data %>%
+    select(MMSE, CDR, M.F) %>%
+    mutate(CDR = as.factor(CDR)) %>%
+ggplot(aes(x = CDR, y = MMSE)) + 
+    geom_jitter(aes(col = CDR), alpha = 0.6) +
+    labs(title = "x") +
+    theme_light()
+
+y <- Data %>%
+    select(nWBV, CDR, M.F) %>%
+    mutate(CDR = as.factor(CDR)) %>%
+ggplot(aes(x = CDR, y = nWBV)) + 
+    geom_jitter(aes(col = CDR), alpha = 0.6) +
+    labs(title = "x") +
+    theme_light()
+
+p <- plot_grid(x, y) 
+title <- ggdraw() + draw_label("3. Distribution of MMSE Score and Wole-brain Volume", fontface='bold')
+plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
+
+x <- Data %>%
+    select(eTIV, CDR, M.F) %>%
+    mutate(CDR = as.factor(CDR)) %>%
+ggplot(aes(x = CDR, y = eTIV)) + 
+    geom_jitter(aes(col = CDR), alpha = 0.6) +
+    labs(title = "x") +
+    theme_light()
+
+y <- Data %>%
+    select(ASF, CDR, M.F) %>%
+    mutate(CDR = as.factor(CDR)) %>%
+ggplot(aes(x = CDR, y = ASF)) + 
+    geom_jitter(aes(col = CDR), alpha = 0.6) +
+    labs(title = "x") +
+    theme_light()
+
+p <- plot_grid(x, y) 
+title <- ggdraw() + draw_label("4. Distribution of Total Intracranial Volume and Atlas Scaling Factor", fontface='bold')
+plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1))
+```
+
+#Decision tree algorithm
+
+```{r train/test-split, echo=TRUE}
+
+Data_new <- Data %>%
+  select(M.F, Age, Educ, SES, MMSE, eTIV, nWBV, ASF, CDR) %>%
+  mutate(CDR = as.factor(CDR))
+
+n_train <- round(0.8 * nrow(Data_new))
+train_indices <- sample(1:nrow(Data_new), n_train) 
+train <- Data_new[train_indices, ]
+test <- Data_new[-train_indices, ] 
+
+formula <- CDR ~ M.F + Age + Educ + SES + MMSE + eTIV + nWBV
+k <- 5
+splitPlan <- kWayCrossValidation(nrow(Data_new), k, NULL, NULL) 
+
+opt_cp <- 0 
+for(i in 1:k) {
+  split <- splitPlan[[i]]
+
+  model_cv <- rpart(formula = formula,
+               data = Data_new[split$train,],
+               method = "class")
+  opt_cp[i] <- model_cv$cptable[which.min(model_cv$cptable[,"xerror"]),"CP"]
+}
+
+model_dt <- rpart(formula = formula,
+               data = Data_new,
+               method = "class",
+               cp = mean(opt_cp))
+
+prp(x = model_dt, type=1, extra = 102)
+
+prediction_dt <- predict(object = model_cv,
+                newdata = Data_new,
+                type = "class")
+
+confusionMatrix(data = prediction_dt,
+                reference = Data_new$CDR)
+
+AUC_dt <- Metrics::auc(actual = Data_new$CDR, predicted = prediction_dt) 
+```
+
+#Naive bayes algorithm
+```{r GMB, message=FALSE, warning=FALSE}
+
+modelNB = naiveBayes(CDR~.,data = train )
+
+prediksi = predict(modelNB,test)
+hasilprediksi = confusionMatrix(table(prediksi,test$CDR))
+hasilprediksi
+
+```
+
