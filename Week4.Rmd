@@ -1,0 +1,195 @@
+---
+title: "Lab 4: Decision Tree"
+author: "CL Kevin Gabriel Florentino"
+date: "2021"
+output:  openintro::lab_report
+---
+
+```{r, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(knitr) 
+```
+
+### SOAL 1 (Jawaban boleh ditampilkan di layar tapi tidak diberikan.)
+
+a. Baca data dari file IS388Lab.xlsx sheet gaussian. Tampilkan struktur data dan beberapa baris pertama data.
+Gambarkan data dan beri warna yang berbeda sesuai dengan group.
+b. Gunakan 5 digit terakhir NIM sebagai seed. Gunakan 80% data sebagai training set dan sisanya sebagai testing set.
+c. Gunakan package party untuk membuat decision tree. Gunakan data training. Gambarkan plot dan print hasilnya.
+d. Gunakan hasil training untuk memprediksi dataset testing. Plot hasil tabulasi prediksi ini.
+e. Buatlah confusion matrixnya. Hitung akurasi, presisi, sensitivity, specificitynya. Tuliskan komentar mengenai keempat hal tersebut.
+
+**Jawaban**    
+
+```{r}
+#a-------
+library(ggplot2)
+library(tidyverse)
+library(readxl)
+library(knitr) 
+
+library(readxl)
+data <- read_excel("IS388Lab.xlsx", sheet = "gaussian")
+str(data)
+head(data)
+
+ggplot(data = data) + 
+  geom_point(mapping = aes(x = x, y = y, color = groupactual))
+data$groupactual <- as.factor(data$groupactual)
+
+
+#b------------
+set.seed(43270)
+ind <- sample(1:NROW(data), 0.8*NROW(data), replace = FALSE)
+Train <- data[ind,]
+Testin <- data[-ind,]
+
+#c----------
+library(party)
+gauparty <- ctree(groupactual ~ x+y,  data=Train)
+predparty <- predict(gauparty, Testin, type = "response")
+plot(gauparty, type="simple")
+print(gauparty)
+
+
+#d-----------
+predparty <- predict(gauparty,Testin,type="response")
+tabparty <- table(predparty, Testin$groupactual)
+
+#e--------------
+library(caret)
+confusionMatrix(tabparty)
+#Akurasi=94.5%
+#Presisi= 91.7%
+#Sesitivity= Class1 :1.0000  2: 0.9508  3: 0.8987
+#Specific= Class 1 :0.0.9643   2; 0.9712  3: 0.9835
+
+```
+
+### SOAL 2 party (Jawaban TIDAK BOLEH ditampilkan.) 
+
+a. Bacalah data Carseats dari package ISLR dan simpanlah ke dalam obyek data frame bernama **carseats**.
+b. Gambarkan grafik untuk melihat distribusi variabel Sales.
+c. Classification tree hanya dapat digunakan bila variabel response berupa variabel kategorikal. Buatlah sebuah variabel kategorikal bernama **High** dengan 2 value: Yes dan No. Yes bila Sales >= 8 dan No bila Sales < 8. Simpanlah variabel ini dengan tipe factor ke dalam data frame carseats.
+d. Gunakan package **party** untuk membuat decision tree. Gambarkan tree yang dihasilkan.
+e. Split data menjadi 2 bagian: training dan testing. Gunakan 5 digit terakhir NIM anda sebagai seed. Split dengan proporsi 80% dan 20%. Fit tree dengan training data. Lakukan prediksi dengan testing data.
+f. Buatlah confusion matrixnya. Hitung akurasi, presisi, sensitivity, specificitynya.
+    
+**Jawaban**    
+```{r}
+
+#a-------
+library(ISLR)
+View(Carseats)
+data.frame(Carseats)
+
+#b----------
+hist(Carseats$Sales, main = "Data Car Sales oleh Kevin Gabriel Florentino 43270",xlab="Sales",ylab="Frekuensi",col="cyan",ylim=c(0,120))
+
+
+#c----------
+
+High <- ifelse(Carseats$Sales >= 8, "Yes","No")
+High <- as.factor(High)
+Carseats <- data.frame(Carseats,High)
+
+
+#d-----------
+
+library(party)
+carseatsctree <-ctree( High~Sales, data=Carseats)
+plot(carseatsctree,type="simple")
+print(carseatsctree)
+
+#e-----------
+
+set.seed(43270)
+samp1 <- sample(nrow(Carseats), 0.8 * nrow(Carseats))
+
+Train1 <- Carseats[samp1, ]
+Testin1 <- Carseats[-samp1, ]
+nrow(Train1)
+nrow (Train1)
+nrow(Testin1)
+
+
+carseatsparty <- ctree(High ~ Sales, data=Train1)
+predicttree1 <- predict(carseatsparty,Testin1,type="response")
+
+
+print(carseatsparty)
+plot(predicttree1, type="simple")
+
+tablecarseats=table(predicttree1,Testin1$High)
+
+#f----------
+library(caret)
+tabletree1 <- table(predicttree1,Testin1$High)
+confusionMatrix(tabletree1)
+
+
+```
+
+
+### SOAL 3 rpart (Jawaban TIDAK BOLEH ditampilkan di layar.)
+
+Diberikan data **Carseats** dari package ISLR.
+
+a. Bacalah data Carseats dari package ISLR dan simpanlah ke dalam obyek data frame bernama **carseats**.
+b. Gambarkan grafik untuk melihat distribusi variabel Sales.
+c. Classification tree hanya dapat digunakan bila variabel response berupa variabel kategorikal. Buatlah sebuah variabel kategorikal bernama **High** dengan 2 value: Yes dan No. Yes bila Sales >= 8 dan No bila Sales < 8. Simpanlah variabel ini dengan tipe factor ke dalam data frame carseats.
+d. Gunakan package **rpart** untuk membuat decision tree. Gambarkan tree yang dihasilkan.
+e. Split data menjadi 2 bagian: training dan testing. Gunakan 5 digit terakhir NIM anda sebagai seed. Split dengan proporsi 80% dan 20%. Fit tree dengan training data. Lakukan prediksi dengan testing data.
+f. Buatlah confusion matrixnya. Hitung akurasi, presisi, sensitivity, specificitynya.
+g. Bandingkan nomor f dengan tree yang dibuat dengan package party. Manakah yang lebih akurat?
+
+```{r}
+#a-------
+library(ISLR)
+View(Carseats)
+data.frame(carseats)
+
+#b----------
+hist(Carseats$Sales, main = "Data Sales oleh Kevin Gabriel Florentino",xlab="Sales",ylab="Frekuensi",col="cyan",ylim=c(0,120))
+
+#c----------
+High <- ifelse(carseats$Sales >= 8, "Yes","No")
+High <- as.factor(High)
+carseats <- data.frame(carseats,High)
+
+#d-----------
+library(rpart)
+library(rpart.plot)
+rpart_tree <- rpart(High~.,data=carseats)
+rpart.plot(rpart_tree, box.palette="RdBu", shadow.col="gray", nn=TRUE)
+print(rpart_tree)
+
+
+#e-----------
+Datacar<- carseats
+set.seed(43270)
+samp2 <- sample(nrow(Datacar), 0.8 * nrow(Datacar))
+
+Train2 <- Datacar[samp2, ]
+Testin2 <- Datacar[-samp2, ]
+nrow(Train2)
+
+nrow (Train2)
+nrow(Testin2)
+
+predicttree2 <- rpart(High ~., data=Train2)
+
+predictpart<-predict(predicttree2,Testin2,type="class")
+tablepart=table(predictpart,Testin2$High)
+
+#f----------
+library(caret)
+confusionMatrix(tablepart)
+
+#g----------
+#Hasil akurasi pada nomor f dan tree yang menggunakan package party menghasilkan akurasi sebesar 1, tingkat keakurasian tersebut sama namun tidak selamanya tingkat akurasinya akan sama, dalam beberapa kondisi bisa terjadi tingkat akurasi party lebih besar dibandingkan rpart, begitu juga sebaliknya.
+
+```
+

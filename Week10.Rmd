@@ -1,0 +1,406 @@
+---
+title: "Week 10 Linear Regression"
+author: "Kevin Gabriel Florentino"
+date: "2021"
+output: openintro::lab_report
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+```
+
+
+SOAL A (Jawaban boleh dishow di layar tapi tidak diberikan)
+------------------------------------------------------------------------
+Setiap algoritma statistik, sebenarnya mempunyai cara yang hampir mirip. 
+Satu hal yang menjadi pembedanya adalah hanya masalah teknis, seperti formula maupun proses penghitungannya saja. 
+Berikut merupakan langkah – langkah dalam melakukan proses analisis Linear Regression.
+
+A1: Retrieve Data
+-------------------------------
+Didalam step by step linear regression ini, kita menggunakan datasets yang telah disediakan oleh R, yaitu Anscombe. 
+Untuk memunculkan data Anscombe pada R cukup mengetik syntax anscombe pada R, lalu enter.
+
+```{r}
+anscombe
+```
+
+Karena pada data Anscombe memiliki 4 variabel x dan 4 variabel y. 
+Untuk mempersingkat waktu kita hanya menggunakan 2 variabel yaitu $x_1$ dan $y_1$.
+
+
+A2: Memeriksa Korelasi
+-----------------------------
+Korelasi adalah salah satu analisis dalam statistik yang dipakai untuk mencari hubungan antara dua variabel yang bersifat kuantitatif. 
+Analisis korelasi merupakan studi pembahasan mengenai derajat hubungan atau derajat asosiasi antara dua variabel, 
+misalnya variabel X dan variabel Y.”
+Syntax yang digunakan untuk mencari korelasi pada R adalah 
+```{r}
+plot(anscombe$x1,anscombe$y1)
+cor(anscombe$x1, anscombe$y1)
+```
+
+Menurut Anda hubungan antara variabel $x_1$ dan $y1_$ dari angka korelasinya adalah:
+
+a. sangat kuat
+b. kuat
+c. lemah
+d. tidak ada korelasi
+
+Jawab: b. kuat
+
+A3 : Membuat Formula
+--------------------------------------------------
+Formula Linear Regression pada umumnya adalah : 
+$y = \beta_0 + \beta_1 x_1 + \epsilon$
+
+Fungsi yang digunakan pada R adalah **lm()**. model kita namakan **linearmod**.
+```{r}
+linearmod <- lm(anscombe$x1 ~ anscombe$y1)
+linearmod
+```
+
+A4: Analisis Model Linear Regression
+-------------------------------------------------------
+Untuk melihat summary dari linearmod, cukup mengetik 
+```{r}
+summary(linearmod)
+```
+
+
+A5: Membuat Prediksi
+--------------------------------------------------------
+Salah satu tujuan utama dari Linear Regression adalah untuk membuat prediksi. 
+Contoh kita ingin memprediksi, jika $x_1$ nya 20, maka berapa jumlah dari $y_1$ nya. 
+```{r}
+predict <-linearmod$coefficients[1]*20 + linearmod$coefficients[2]
+predict
+```
+
+
+SOAL B (Jawaban TIDAK BOLEH dishow di layar tapi tidak diberikan) 
+-------------------------------------------
+Studi Kasus Kacang kedelai menggunakan Algoritma Linear Regression (waktu 45 menit)
+
+Kacang Kedelai
+--------------
+Kacang kedelai merupakan jenis kacang yang digunakan untuk bahan makanan seperti susu kacang, tempe, tahu dan kecap. 
+Tanaman kacang kedelai sudah dibudidayakan sejak 3500 tahun yang lalu di asia timur. 
+Kedelai merupakan sumber utama protein nabati dan minyak nabati dunia. 
+Meskipun sejarah mengatakan bahwa kacang kedelai di budidayakan pertama oleh bangsa asia timur, 
+akan tetapi negara penghasil kacang kedelai saat ini adalah Amerika Serikat. 
+
+Permintaan adalah jumlah barang/jasa yang diinginkan dan mampu dibeli oleh konsumen 
+pada berbagai tingkat harga dalam jangka waktu tertentu dengan menganggap factor yang mempengaruhi nya konstan/tetap.
+Permintaan kacang kedelai dari tahun ke tahun mengalami naik maupun turun (tidak tetap). 
+Hal ini dipengaruhi oleh banyak hal, contohnya adalah seperti harga dan daya konsumsi. 
+Harga dapat mempengaruhi permintaan namun tidak selalu, begitu juga dengan daya konsumsi.
+
+
+B1. Retrieve data
+----------------------
+
+Sumber dari data yang digunakan untuk analisis ini berasal dari BPS (Badan Pusat Statistik) 
+dan Kementerian Pertanian Republik Indonesia yang telah dimodifikasi sehingga data dapat mudah dibaca. 
+soal:
+anda mendapatkan data file **IS388Lab.xlsx** sheet **datapenduduk**. 
+import data tsd ke variable bernama dat.
+```{r}
+datapend <- read.csv("datapenduduk.csv", sep = ";")
+datapend
+```
+
+
+B2. Memeriksa korelasi
+---------------------
+soal:
+hitung korelasi antara penduduk dan demand
+```{r}
+cor(datapend$penduduk, datapend$demand)
+```
+
+
+Menurut Anda hubungan antara variabel $x_1$ dan $y_1$ dari angka korelasinya adalah:
+
+a. sangat kuat
+b. kuat
+c. lemah
+d. tidak ada korelasi
+
+Jawab: b. kuat
+
+
+B3: Membuat Formula
+-------------------
+Formula linear regression pada R menggunakan fungsi lm().    
+Soal:   
+Buatlah liner model dengan nama linermodel menggunakan variabel dependent penduduk dan prediktor demand.
+```{r}
+linermodel <- lm(datapend$penduduk ~ datapend$demand)
+linermodel
+```
+
+B4: Analisa Model Linear Regression
+-------------------------------
+soal buatlah summary dari model ini! 
+```{r}
+summary(linermodel)
+```
+
+B5: Membuat Prediksi
+--------------------
+Salah satu tujuan utama dari Linear Regression adalah untuk membuat prediksi. 
+Contoh jika demandnya 100000, maka berapa jumlah dari penduduknya nya. 
+Berikut adalah syntaxnya = 
+```{r}
+predict1 <-linermodel$coefficients[1] + linermodel$coefficients[2]*100000
+predict1
+```
+
+B6: Data Training
+-----------------
+Training Model Jumlah Penduduk dan Demand Kacang Kedelai 1978-2008
+Data yang digunakan untuk melakukan training model adalah data train. 
+Data train adalah representasi pengetahuan yang akan digunakan untuk memprediksi kelas data baru yang sudah ada.    
+
+Soal:
+
+Gunakan NIM anda untuk generate random set.seed(NIM).
+Buatlah data training 70% dengan nama **data_train** dan testing 30% dengan nama **data_test**
+```{r}
+NIM=43270
+set.seed(NIM)
+data_training <- sample(nrow(datapend), 0.7 * nrow(datapend))
+data_train <- datapend[data_training,]
+data_test <- datapend[-data_training,]
+```
+
+B7: membuat model dari data training 
+--------------------------------------------------------
+Soal: buatlah formula linear model dengan nama model menggunakan variabel dependant penduduk dan prediktor demand.
+```{r}
+library(ggplot2)
+model <- ggplot(data = datapend, aes(x = penduduk, y = demand)) +
+geom_point() +
+stat_smooth(method = "lm", col = "dodgerblue3") +
+theme(panel.background = element_rect(fill = "white"),
+axis.line.x=element_line(),
+axis.line.y=element_line()) +
+ggtitle("Linear Model Fitted to Data")
+model
+
+```
+
+B8: Testing Model Jumlah Penduduk dan Demand Kacang Kedelai
+----------------------------------------------------------------------
+Data yang digunakan untuk melakukan testing model adalah data test. 
+Data test adalah untuk mengukur sejauh mana classifier berhasil melakukan sebuah klasifikasi dengan benar.
+
+Soal:
+
+Buat prediksi menggunakan model yang baru saja dibuat dari data testing
+hasilnya dinamakan **pred**.
+hitung RMSE nya
+```{r}
+library(dplyr)
+fit1 <- lm(penduduk ~ demand, data = datapend)
+data.demand = datapend %>% select(demand)
+pred = c(predict(fit1, data.frame(demand = data.demand)))
+pred
+
+RMSE <- function(pred,fit1){
+sqrt(mean(pred-fit1)^2)
+}
+
+RMSE(pred, data_test$penduduk)
+
+
+
+```
+
+
+
+SOAL c. (Jawaban TIDAK BOLEH dishow di layar tapi tidak diberikan) rpart
+-------------------------------------------
+
+C1. Baca data
+-------------
+Baca data dari file **IS388Lab.xlsx** sheet **insurance**. Simpan dengan nama obyek dat. 
+
+```{r, message = FALSE, warning=FALSE}
+library(readxl)
+datains <- readxl::read_excel("dataweek8.xlsx", sheet = "insurance")
+datains
+
+```
+
+C2. Split data 
+---------------
+Split data menjadi 2 bagian 90% dan 10% untuk training dan testing. 
+Gunakan nim Anda untuk generator bilangan randomnya. 
+Simpan data untuk training dengan nama train dan data untuk testing dengan nama test. 
+
+```{r, message = FALSE, warning = FALSE}
+NIM=43270
+set.seed(NIM)
+training <- sample(nrow(datains), 0.9 * nrow(datains))
+train <- datains[training,]
+test <- datains[-training,]
+
+```
+
+c3. Eksplorasi data: korelasi
+-----------------------------
+Lakukan eksplorasi data. 
+Pada tahap selanjutnya anda akan memprediksi premi asuransi (charges) berdasarkan variabel-variabel prediktor seperti umur, bmi (Body Mass Index) dst. Hitunglah koefisien korelasi untuk semua variabel numerik. 
+Prediktor manakah yang paling berkaitan dengan respons?
+
+```{r, message = FALSE, warning=FALSE}
+library(ggplot2)
+library(GGally)
+ggpairs(data = train, columns = c(2,3,5,6), title = "Data Asuransi oleh Kevin Gabriel Florentino 43270")
+#variabel yang paling berkaitan dengan respons adalah variabel umur
+
+```
+
+c4. Eksplorasi data: scatter plot 
+---------------------------------
+Gambarkan scatter plot untuk charges vs bmi, charges vs age menggunakan data training. 
+
+```{r, message = FALSE, warning=FALSE}
+plot(train$charges, train$bmi, xlab = "Charges", ylab = "BMI", main = "Plot Charges vs BMI oleh Kevin Gabriel Florentino 43270", col = 3)
+
+plot(train$charges, train$age, xlab = "Charges", ylab = "BMI", main = "Plot Charges vs Age oleh Kevin Gabriel Florentino 43270", col = 6)
+
+```
+
+c5. Eksplorasi data: boxplot 
+----------------------------
+Gambarkan boxplot untuk charges vs sex, charges vs smoker, charges vs region menggunakan data training.
+
+```{r, message = FALSE, warning=FALSE}
+boxplot(train$charges ~ train$sex, xlab = "Sex", ylab = "Charges", main = "Distribusi Charges (Premi Asuransi) Berdasarkan Jenis Kelamin \n oleh Kevin Gabriel Florentino 43270", col = c("coral", "steel blue"))
+
+boxplot(train$charges ~ train$smoker, xlab = "Smoker", ylab = "Charges", main = "Distribusi Charges (Premi Asuransi) vs Smoker \n oleh Kevin Gabriel Florentino 43270", col = c("light pink", "coral"))
+
+boxplot(train$charges ~ train$region, xlab = "Region", ylab = "Charges", main = "Distribusi Charges (Premi Asuransi) Berdasarkan Wilayah \n oleh Kevin Gabriel Florentino 43270", col = c("violet", " blue", "pink", "green"))
+
+
+```
+
+c6. Membuat prediksi 
+---------------------
+Tuliskan code untuk membuat model dengan prediktor age dengan menggunakan data training. Namakan model ini **model1**.
+
+```{r, message = FALSE, warning=FALSE}
+(modelLR <- lm(charges ~ age, data = datains))
+
+```
+
+c7. Diagnosa regresi 
+--------------------
+Lakukan diagnosa regresi. dengan menggambarkan diagnostic plot 1 s/d 6. 
+Lakukan uji Durbin-Watson untuk uji otokorelasi. 
+Hitunglah VIFnya untuk pengecekan multikolinearitas. 
+Uji normalitas residual dengan Anderson-Darling test.
+```{r}
+par(mfrow = c(2,3))
+plot(modelLR, which = c(1:6))
+par(mfrow = c(1,1))
+
+library(lmtest)
+lmtest::dwtest(modelLR)
+#p-value yang diperoleh adalah 0.728 maka p-value tersebut tidak terdapat otokorelasi
+
+#library(car)
+#car::vif(modelLR)
+
+library(nortest)
+ad.test(modelLR$residuals)
+#p-value < 0.05 maka data tersebut tidak berdistribusi normal
+
+
+```
+
+c8. Membuat prediksi 
+---------------------
+Hitunglah prediksi charges dengan menggunakan data test. Hitunglah RMSEnya.
+```{r, error = FALSE, message=FALSE}
+(prediksi <- predict(modelLR, data = test$age))
+library(Metrics)
+rmse(test$charges, prediksi)
+#nilai RMSE yang diperoleh yaitu 13043.82
+
+```
+
+
+SOAL D. (Jawaban TIDAK BOLEH dishow di layar tapi tidak diberikan) 
+-------------------------------------------
+LATIHAN SOAL Multi Linear Regression
+
+D1. Model MLR
+-------------
+Buatlah model multilinear regression dengan nama **model2** dengan menggunakan 2 prediktor age dan smoker dengan data training. 
+Lakukan langkah c7 untuk model ini.
+
+```{r, message = FALSE, warning=FALSE}
+(model <- lm(charges ~ age + smoker, data = train))
+par(mfrow = c(2,3))
+plot(model, which = c(1:6))
+par(mfrow = c(1,1))
+
+library(lmtest)
+lmtest::dwtest(model)
+#p-value yang diperoleh adalah 0.01705 maka data tersebut tidak terdapat otokorelasi
+
+library(car)
+car::vif(model)
+#nilai vif test masing - masing variabel berada di antara 1 hingga 5 maka data tersebut terdapat multikolinearitas namun masih dapat diterima
+
+library(nortest)
+ad.test(model$residuals)
+#p-value < 0.05 maka data tersebut tidak berdistribusi normal
+
+(prediksi2var <- predict(model, data = test$age + test$smoker))
+library(Metrics)
+rmse(test$charges, prediksi2var)
+#nilai RMSE yang diperoleh yaitu 16184.17
+```
+
+D2. Model; 3 Prediktor
+-----------------------
+Buatlah model multilinear regression dengan nama **model3** dengan menggunakan 3 prediktor age, bmi, dan smoker dengan data training. 
+Bandingkan dengan model yang menggunakan 3 prediktor. Lakukan langkah c7 dan c8 untuk model ini.
+
+```{r, message = FALSE, warning=FALSE}
+(model1 <- lm(charges ~ age + bmi + smoker, data = train))
+par(mfrow = c(2,3))
+plot(model1, which = c(1:6))
+par(mfrow = c(1,1))
+
+library(lmtest)
+lmtest::dwtest(model1)
+#p-value yang diperoleh adalah 0.03897, p-value < 0.05 maka  terdapat otokorelasi
+
+library(car)
+car::vif(model1)
+#nilai vif test masing - masing variabel berada di antara 1 hingga 5 maka data tersebut terdapat multikolinearitas namun masih dapat diterima
+
+library(nortest)
+ad.test(model1$residuals)
+#p-value < 0.05 maka data tersebut tidak berdistribusi normal
+
+(prediksi3var <- predict(model1, data = test$age + test$bmi + test$smoker))
+library(Metrics)
+rmse(test$charges, prediksi3var)
+#nilai RMSE yang diperoleh yaitu 16313.19
+```
+
+D3. Pemilihan Model
+---------------------
+Model manakah yang paling cocok untuk data ini? Sebutkan alasan anda.
+
+```{r, message = FALSE, warning=FALSE}
+#model yang cocok adalah model variabel 2 hal tersebut dikarenakan nilai rmse pada variabel 2 lebih kecil daripada variabel 3 yaitu 16184.17 dimana variabel 3 memiliki nilai 16313.19
+```

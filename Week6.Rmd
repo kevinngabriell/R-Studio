@@ -1,0 +1,221 @@
+---
+title: "Lembar Jawaban Siswa Lab: Text Mining" 
+author: "CL Kevin Gabriel Florentino 43270"
+date: "2021"
+output: openintro::lab_report
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(OutDec = ".")
+```
+
+
+### Soal 1. Membandingkan 2 twitters (Jawaban boleh ditunjukkan tapi tidak diberikan)
+
+Anda akan diberikan 2 buah file twitters dari Julia dan Dave yang akan dibandingkan.
+
+a. Baca data twitter Julia dan Dave.
+b. Tampilkan twitter Julia dan Dave dalam plot.
+c. Cleansing dan hitung frekuensi kata-kata yang dipergunakan oleh Julia dan Dave.
+d. Bandingkan frekuensi kata-kata twitter Julia dan Dave, tampilkan pada plot.
+
+```{R}
+library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(tidyr)
+library(tidytext)
+library(stringr)
+library(purrr)
+library(broom)
+library(scales)
+
+#a 
+twitterDaveJulia <- read.csv(file = 'labw06_textmining_data_tweets_dave.csv')
+
+#b
+tweets <- bind_rows(twitterDaveJulia %>% 
+                      mutate(person = "Julia"),
+                    twitterDaveJulia %>% 
+                      mutate(person = "David")) %>%
+  mutate(timestamp = ymd_hms(timestamp))
+
+ggplot(tweets, aes(x = timestamp, fill = person)) +
+  geom_histogram(position = "identity", bins = 20, show.legend = FALSE) +
+  facet_wrap(~person, ncol = 1)
+
+#c
+remove <- "&amp;|&lt;|&gt;"
+tidy <- tweets %>% 
+  filter(!str_detect(text, "^RT")) %>%
+  mutate(text = str_remove_all(text, remove)) %>%
+  unnest_tokens(word, text, token = "tweets") %>%
+  filter(!word %in% stop_words$word,
+         !word %in% str_remove_all(stop_words$word, "'"),
+         str_detect(word, "[a-z]"))
+freq <- tidy %>% 
+  group_by(person) %>% 
+  count(word, sort = TRUE) %>% 
+  left_join(tidy %>% 
+              group_by(person) %>% 
+              summarise(total = n())) %>%
+  mutate(freq = n/total)
+freq
+
+freq <- freq %>% 
+  select(person, word, freq) %>% 
+  spread(person, freq) %>%
+  arrange(Julia, David)
+
+freq
+
+#D
+library(scales)
+ggplot(freq, aes(Julia, David)) +
+  geom_jitter(alpha = 0.1, size = 3, width = 0.3, height = 0.25) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  geom_abline(color = "red")
+
+
+```
+
+
+### SOAL 2 Membandingkan 2 buku (Jawaban tidak boleh ditunjukkan dan tidak diberikan.)
+
+a. Buatlah words frequencies analisis (>200words) tentang buku H.G. Wells.
+b. Buatlah words frequencies analisis (>500words) tentang buku Brontë sisters.
+c. Analisis tingkat kemiripan (similarity) antara kedua buku
+   Sebutkan/cari:
+   
+   c1. satu kata yang sering dipakai dengan jumlah yang kira-kira sama adalah          txxx 
+   c2. satu kata yang lebih sering dipakai Wells adalah inXXXXXXX 
+       invisible)
+   c3. satu nama yang lebih sering dipakai Bronte adalah jxxx 
+   c4. korelasi antara keduanya adalah 
+   
+**Jawaban**    
+
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+library(gutenbergr) #library
+library(dplyr)
+library(tidytext)
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(scales)
+
+
+#------------a. analisis word freq HG Wells--------------------
+
+frank  <-  gutenberg_download(84, mirror = "http://mirrors.xmission.com/gutenberg/")
+
+hgwells <- gutenberg_download(c(35, 36, 5230, 159), ,mirror = "http://mirrors.xmission.com/gutenberg/") #download data
+str(hgwells)
+
+tidyhg <- hgwells %>% unnest_tokens(word, text)
+tidyhg <- tidyhg %>% anti_join(stop_words,by="word")
+tidyhg %>% count(word, sort=TRUE) %>% filter(n >200)
+tidyhg %>% count(word, sort=TRUE) %>% filter(n >200) %>%mutate(word =
+reorder(word, n)) %>%ggplot(aes(word, n)) +geom_col() +xlab(NULL) +coord_flip()
+
+
+#------------b. analisis word freq Bronte--------------------
+frank  <-  gutenberg_download(84, mirror = "http://mirrors.xmission.com/gutenberg/")
+
+bronte <- gutenberg_download(c(1260, 768, 969, 9182, 767), ,mirror = "http://mirrors.xmission.com/gutenberg/") #download data
+str(bronte)
+
+tidybronte <- bronte %>% unnest_tokens(word, text)
+tidybronte <- tidybronte %>% anti_join(stop_words,by="word")
+
+tidybronte %>% count(word, sort=TRUE) %>% filter(n >500)
+tidybronte %>% count(word, sort=TRUE) %>% filter(n >500) %>%mutate(word =
+reorder(word, n)) %>%ggplot(aes(word, n)) +geom_col() +xlab(NULL) +coord_flip()
+
+
+#-----------------C------------------------------
+library(tidyr)
+frequency <- bind_rows(mutate(tidybronte, author = "Brontë Sisters"),
+mutate(tidyhg, author = "H.G Wells")) %>%
+mutate(word = str_extract(word, "[a-z']+")) %>%
+count(author, word) %>%
+group_by(author) %>%
+mutate(proportion = n / sum(n)) %>%
+select(-n) %>%
+spread(author, proportion) %>%
+gather(author, proportion, `Brontë Sisters`)
+
+library(scales)
+
+ggplot(frequency, aes(x = proportion, y = `H.G Wells`, color = abs(`H.G Wells` - proportion))) +
+geom_abline(color = "gray40", lty = 2) +
+geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+scale_x_log10(labels = percent_format()) +
+scale_y_log10(labels = percent_format()) +
+scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+facet_wrap(~author, ncol = 2) +
+theme(legend.position="none") +
+labs(y = "H.G Wells", x = NULL)
+
+
+cor.test(data = frequency[frequency$author == "Brontë Sisters",],
+~ proportion + `H.G Wells`)
+
+```
+
+### Soal 3. Sentimen Analisis (Jawaban Tidak boleh ditunjukkan dan tidak diberikan.)
+
+a. Buatlah sentiment analisis pada buku karangan H.G. Wells
+b. Buatlah sentiment analisis pada buku karangan Brontë sisters
+c. Buatlah perbadingan  kata-kata sentimen positif dan negatif yang digunakan dengan lexicon bing! Kemudian cari kata-kata berikut ini:
+
+   c1. paling positif yg digunakan Wells adalah .... 
+   c2. paling negatif yg digunakan Wells adalah .....
+   c3. paling positif yg digunakan Bronte adalah ..... 
+   c4. paling negatif yg digunakan Bronte adalah ..... 
+   c5. kata negatif yang paling banyak digunakan oleh kedua penulis adl .....
+   
+Jawaban:
+
+```{R}
+#-------------A
+frank  <-  gutenberg_download(84, mirror = "http://mirrors.xmission.com/gutenberg/")
+
+hgwells <- gutenberg_download(c(35, 36, 5230, 159), ,mirror = "http://mirrors.xmission.com/gutenberg/") #download data
+
+tidywells <- hgwells %>% unnest_tokens(word, text) %>% anti_join(stop_words,by="word")
+sentiment <- get_sentiments("bing")
+sentiment_wells <- tidywells %>% inner_join(get_sentiments("bing"), by = "word") %>% count(word, index = gutenberg_id %/% 80, sentiment) %>% spread(sentiment, n, fill = 0) %>% mutate(sentiment = positive - negative)
+wellshg <- tidywells %>% inner_join(get_sentiments("bing")) %>% count(word, sentiment, sort = TRUE) %>%ungroup()
+wellshg
+wellshg %>% group_by(sentiment) %>% top_n(10) %>% ungroup() %>% mutate(word = reorder(word, n)) %>% ggplot(aes(word, n, fill = sentiment)) + geom_col(show.legend = FALSE) + facet_wrap(~sentiment, scales = "free_y") + labs(y = "Contribution tosentiment", x = NULL) + coord_flip()
+
+
+#-------------B
+frank  <-  gutenberg_download(84, mirror = "http://mirrors.xmission.com/gutenberg/")
+
+bronte <- gutenberg_download(c(1260, 768, 969, 9182, 767), ,mirror = "http://mirrors.xmission.com/gutenberg/") #download data
+
+
+tidybronte <- bronte %>% unnest_tokens(word, text) %>% anti_join(stop_words,by="word")
+sentiment <- get_sentiments("bing")
+sentiment_wells <- tidybronte %>% inner_join(get_sentiments("bing"), by = "word") %>% count(word, index = gutenberg_id %/% 80, sentiment) %>% spread(sentiment, n, fill = 0) %>% mutate(sentiment = positive - negative)
+brontebing <- tidybronte %>% inner_join(get_sentiments("bing")) %>% count(word, sentiment, sort = TRUE) %>%ungroup()
+brontebing
+brontebing %>% group_by(sentiment) %>% top_n(10) %>% ungroup() %>% mutate(word = reorder(word, n)) %>% ggplot(aes(word, n, fill = sentiment)) + geom_col(show.legend = FALSE) + facet_wrap(~sentiment, scales = "free_y") + labs(y = "Contribution tosentiment", x = NULL) + coord_flip()
+
+
+#c
+#1 Kata paling positif yang digunakan Wells adalah Marvel
+#2 Kata paling negatif yang digunakan Wells adalah Invisible
+#3 Kata paling positif yang digunakan Bronte adalah Love
+#4 Kata paling negatif yang digunakan Bronte adalah Miss
+#5 Kata negatif yang paling banyak digunakan oleh Wells dan Bronte adalah Dark
+
+```
+

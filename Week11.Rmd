@@ -1,0 +1,261 @@
+---
+title: "Week 11: Time Series: ARIMA" 
+author: "SI Lecturers"
+date: "2021"
+output: openintro::lab_report
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(OutDec = ".")
+```
+
+# SOAL A1: EXPLORATORY DATA ANALYSIS SAHAM BBCA.JK 
+
+a. Load semua library yang diperlukan.
+b. Baca file data **IS388Lab.xlsx** sheet **BBCA_JK_monthly** dan save dengan nama obyek **dat**.
+c. Tampilkan struktur data, 3 baris pertama data dan 3 baris terakhir data.
+d. Buatlah data frame baru bernama **stock** yang diisi dengan data dari kolom Price dan AdjClose. Namakan kolom-kolom ini **date** dan **price**. 
+e. Split data sehingga data dari tahun 2011 sampai 2017 menjadi training set dan data tahun 2018 menjadi testing set.  
+f. Ubahlah data kolom price menjadi tipe time series dari training set data dengan fungsi **stats::ts()** dan save hasilnya dengan nama obyek **train_ts**. Periksalah apakah class obyek yang terbentuk sudah berbentuk time series object. 
+g. Lakukan eksplorasi data dengan menampilkan plot data. Beri label "Tahun" pada sumbu X, label "Harga per lembar saham" pada sumbu Y dan judul "Harga Saham BCA/ lembar tahun 2010-2017".  
+h. Tampilkan summary data. Lakukan pemeriksaan apakah ada missing value. Lakukan pemeriksaan cycle.
+i. Lakukan pemeriksaan seasonality dengan menggambarkan boxplot untuk setiap bulan. Berikan judul dan label sumbu yang informatif.
+j. Tuliskan kesimpulan dari proses **Exploratory Data Analysis** ini.
+
+
+
+**Jawaban**
+---
+a. Load semua library yang diperlukan.
+b. Baca file data **IS388Lab.xlsx** sheet **BBCA_JK_monthly** dengan dan save dengan nama obyek **dat**.
+c. Tampilkan struktur data, 3 baris pertama data dan 3 baris terakhir data. Hilangkan baris yang mengandung nilai **NA**.
+d. Buatlah data frame baru bernama **stock** yang diisi dengan data dari kolom Price dan AdjClose. Namakan kolom-kolom ini **date** dan **price**. 
+e. Split data sehingga data sebelum tahun 2018 menjadi training set dan data mulai tahun 2018 menjadi testing set.  
+f. Ubahlah data kolom price menjadi tipe time series dari training set data dengan fungsi **stats::ts()** dan save hasilnya dengan nama obyek **train_ts**. Periksalah apakah class obyek yang terbentuk sudah berbentuk time series object. 
+g. Lakukan eksplorasi data dengan menampilkan plot data. Beri label "Tahun" pada sumbu X, label "Harga per lembar saham" pada sumbu Y dan judul "Harga Saham BCA/ lembar tahun 2011-2017".  
+h. Tampilkan summary data. Lakukan pemeriksaan apakah ada missing value. Lakukan pemeriksaan cycle.
+i. Lakukan pemeriksaan seasonality dengan menggambarkan boxplot untuk setiap bulan. Berikan judul dan label sumbu yang informatif.
+j. Tuliskan kesimpulan dari proses **Exploratory Data Analysis** ini.
+
+
+
+**Jawaban**
+---
+
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+#a---------
+library(readxl)
+library(ggfortify)
+library(lubridate)
+
+#b----
+datbca <- read_excel("IS388Lab.xlsx", sheet = "BBCA_JK_monthly")
+dat
+
+#c----
+sum(is.na(dat))
+dat <- na.omit(dat)
+sum(is.na(dat))
+dat
+
+str(dat)
+head(dat,3)
+tail(dat,3)
+
+#d----
+date <- dat[,"Date"]
+price <- round(dat[,"Adj Close"])
+stock <- data.frame(date, price)
+colnames(stock) <- c("date","price")
+str(stock)
+head(stock, 3)
+
+#e----
+training <- subset(stock, stock$date >= "2011-01-01" & date <= "2018-01-01")
+testing <- subset(stock, stock$date >= "2018-01-01" & date < "2019-01-01")
+
+#f---
+train_ts <- stats::ts(training[,2], frequency = 12, start = c(2011,1)) 
+test_ts <- stats::ts(testing[,2], frequency = 12, start = c(2019,1)) 
+class(train_ts)
+class(test_ts)
+
+#g------
+plot.ts(train_ts, xlab = "Tahun", ylab = "Harga per lembar saham", main = "Harga Saham BCA per Lembar periode 2010-2017")
+xts::periodicity(train_ts)
+stats::cycle(train_ts)
+
+#h----
+summary(train_ts)
+cycle(train_ts)
+sum(is.na(train_ts))
+
+#i----
+boxplot(train_ts~cycle(train_ts), xlab = "Bulan", ylab = "Harga per lembar saham", main = "Harga Saham BCA per Lembar periode 2011-2017")
+
+
+# Trend harga setiap tahun selalu naik. 
+# Harga terendah pada 2010 yaitu Rp 978 
+# Mean harga Rp 2166 dan harga tertinggi pada 2017 yaitu Rp 4136
+# Naik dan turun seasonality pada data.
+# Harga cenderung rendah pada bulan 1, 5
+# Kandidat lag u/ seasonality: 11
+# p-value harus < 5% agar series menjadi stasioner.
+```
+
+
+# SOAL A2: TIME SERIES MODELING SAHAM BBCA.JK DENGAN ARIMA
+
+Data: BBCA_JK
+Package yang digunakan:
+
+* forecast
+* tseries 
+* tidyverse 
+* nortest 
+* ggfortify
+
+
+Perintah
+---
+
+a. Cek apakah series sudah stasioner. Ingat series yang anda gunakan adalah training set (time series object **train_ts**). 
+b. Bila series belum stasioner, lakukan langkah-langkah agar series menjadi stasioner.
+c. Carilah model ARIMA yang tepat dari langkah (a) dan (b). Gunakan cara manual (plot, uji hipotesa).
+d. Buatlah forecast untuk 12 bulan ke depan. 
+e. Hitung akurasi dengan menggunakan testing set (time series object **test_ts**). 
+
+**Jawaban**
+---
+
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+#a-----------------
+library(forecast)
+library(tseries)
+library(tidyverse)
+library(nortest)
+library(ggfortify)
+library(DMwR)
+
+plot(train_ts)
+adf.test(train_ts)
+
+#series belum stasioner
+
+#b-----------------
+
+
+#deseasonalize data
+
+
+#PACF signifikan pada lag 1 --> kandidat AR(1)
+#lakukan differencing
+diff_train <- diff(train_ts)
+adf.test(diff_train)
+
+#series sekarang stasioner
+
+#c--------------------------------
+arima_train <- auto.arima(diff_train)
+arima_train
+
+#ARIMA(0,1,0)(1,0,0)[12] with drift 
+
+#residual tampak seperti white nose dan random
+#Pada ACF plot tidak terlihat spike
+
+#residual berdasarkan distribusi Gaussian
+
+#d----
+f_saham2 <- forecast(arima_train)
+plot(f_saham2)
+
+forecast2 = predict(arima_train, 12)
+
+#e----
+accmeasures = regr.eval(test_ts, forecast2$pred)
+accMeasure=rbind(accmeasures)
+print(accMeasure)
+
+```
+
+# SOAL A3: Ulang proses yang sama untuk saham BBRI.
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+
+#a---------
+library(forecast)
+library(tseries)
+library(tidyverse)
+library(nortest)
+library(ggfortify)
+library(readxl)
+
+#b----
+dataBBRI <- read_xlsx("IS388Lab.xlsx", sheet = "BBRI_JK_monthly")
+dataBBRI <- dataBBRI %>%  dplyr::mutate_if(is.character, as.numeric)
+dataBBRI <- na.omit(dataBBRI)
+
+#c----
+str(dataBBRI)
+head(dataBBRI,3)
+tail(dataBBRI,3)
+
+#d----
+date <- dataBBRI$Date
+price <- dataBBRI$`Adj Close`
+stock <- data.frame(date,price)
+stock
+
+#e----
+training <- subset(stock, stock$date >= "2011-01-01" & date <= "2018-01-01")
+testing <- subset(stock, stock$date >= "2018-01-01" & date < "2019-01-01")
+
+#f---
+training_ts <- stats::ts(training[,2], frequency = 12, start = c(2011,1)) 
+testing_ts <- stats::ts(testing[,2], frequency = 12, start = c(2019,1)) 
+class(training_ts)
+class(testing_ts)
+
+#g------
+plot(training_ts, main = "Harga Saham BBRI Per lembar periode 2011-2017", xlab = "Tahun", ylab = "Harga Per Lembar Saham")
+
+#h----
+summary(training_ts)
+xts::periodicity(training_ts)
+stats::cycle(training_ts)
+
+#i----
+stats::decompose(training_ts) %>% autoplot()
+boxplot(train_ts~cycle(training_ts), xlab = "Bulan", ylab = "Price", main = "Cek Seasonality")
+
+```
+
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+#a-----------------
+plot(train_ts)
+adf.test(train_ts)
+
+#b-----------------
+
+#deseasonalize data
+diff_train <- diff(train_ts)
+adf.test(diff_train)
+
+#c--------------------------------
+arima_train <- auto.arima(diff_train)
+arima_train
+
+#d-
+f_saham2 <- forecast(arima_train)
+plot(f_saham2)
+
+forecast2 = predict(arima_train, 12)
+
+#e----
+accmeasures = regr.eval(test_ts, forecast2$pred)
+accMeasure=rbind(accmeasures)
+print(accMeasure)
+
+```

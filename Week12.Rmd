@@ -1,0 +1,205 @@
+---
+title: "Week 12: Association Rules" 
+author: "Kevin Gabriel Florentino"
+date: "2021"
+output: openintro::lab_report
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(OutDec = ".")
+```
+
+
+soal 1. titanic Jawaban boleh ditunjukkan tapi tidak diberikan 
+-----------------------------------------------------------------------------------------
+Gunakan data **titanic.raw**. Kalau ada masalah silakan download disini **http://www.rdatamining.com/data**. 
+Anda menganalisis profile penumpang selamat di kapal titanic.
+
+a. load data titatnic.raw, lihat strukturnya
+b. gunakan fungsi apriori untuk membuat rules, periksa rulenya
+c. gunakan list(minlen=2, supp=0.05, conf=0.8 untuk memperbaiki menggabungkan lhs dan ganti rhs dengan "Survived=No" atau "Survived=Yes".
+d. temukan redundant rules dan kemudian prune 
+e. visualisasi dengan scatterplot
+f. temukan profile selamat 
+   
+
+```{r}
+#a--------------------
+load("titanic.raw.rdata")
+str(titanic.raw)
+
+#b--------------------
+library(arules)
+rules <- apriori(titanic.raw)
+inspect(rules)
+
+#c--------------------
+rules <- apriori(titanic.raw,
+  parameter = list(minlen=2, supp=0.05, conf=0.8),
+  appearance = list(rhs=c("Survived=No", "Survived=Yes"),
+  default="lhs"),
+  control = list(verbose=F))
+rules <- sort(rules, by="lift")
+inspect(rules)
+
+#d--------------------
+subset <- is.subset(rules, rules)
+subset[lower.tri(subset, diag=T)] <- NA
+redundant <- colSums(subset, na.rm=T) >= 1 
+
+pruned <- rules[-redundant]
+inspect(pruned)
+
+#e--------------------
+inspect(pruned)
+library(arulesViz)
+library(dplyr)
+plot(pruned)
+plot(pruned, method="graph", control=list(type="items"))
+plot(pruned, method="paracoord", control=list(reorder=TRUE))
+pruned %>% plot(method="graph",control=list(layout=igraph::in_circle()))
+
+#f--------------------
+#Profile Selamat {survived=Yes}
+#{Class=1st,Sex=Female,Age=Adult}
+
+
+```
+
+SOAL 2 Data Grosir
+-----------------------------------------------------------------------------
+
+a. baca dataset Groceries dari package arules.
+b. plot 10 produk terlaris, produk mana terlaris urutan ke-10? 
+c. hitung apriori support 5%, 1%, dan 0.5% dari dan confident dari 0.9,08,0.7 ... 0.1
+d. plot hasil nomor c, pilih mana support dan confidence terbaik jumlah syarat rules maximal 20
+e. hitung apriori berdasarkan support dan confidence terbaik.
+f. visualisasikan hasil nomor e dengan 5 tipe grafik pada module halaman 12-14.
+
+**Jawaban**    
+
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+# Load the libraries
+library(tidyverse) # data manipulation
+library(arules) # mining association rules and frequent itemsets
+library(arulesViz) # visualization techniques for association rules
+library(knitr) # dynamic report generation
+library(gridExtra) # provides a number of user-level functions to work with "grid" graphics
+library(lubridate) # work with dates and times
+ 
+#a--------------------
+library(datasets)
+data("Groceries")
+
+#b--------------------
+itemFrequencyPlot(Groceries, topN=10, type="absolute", col="wheat2",xlab="Item name",
+ylab="Frequency (absolute)", main="Absolute Item Frequency Plot\n Oleh Kevin Gabriel Florentino 00000043270")
+
+#Produk terlaris urutan ke-10 adalah sausage
+
+#c--------------------
+support <- c(0.05, 0.01, 0.005)
+confidence <- c(0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)
+
+support5 <- integer(length=9)
+support1 <- integer(length=9)
+support0.5 <- integer(length=9)
+
+# Apriori algorithm with a support level of 5%
+for (i in 1:length(confidence)) {
+  
+  support5[i] <- length(apriori(Groceries, parameter=list(sup=support[1], 
+                                   conf=confidence[i], target="rules")))
+}
+# Apriori algorithm with a support level of 1%
+for (i in 1:length(confidence)) {
+  
+  support1[i] <- length(apriori(Groceries, parameter=list(sup=support[2], 
+                                   conf=confidence[i], target="rules")))
+}
+# Apriori algorithm with a support level of 0.5%
+for (i in 1:length(confidence)) {
+  
+  support0.5[i] <- length(apriori(Groceries, parameter=list(sup=support[3], 
+                                   conf=confidence[i], target="rules")))
+}
+
+#d--------------------
+# Number of rules found with a support level of 5%
+plot5 <- qplot(confidence, support5, geom=c("point", "line"), 
+               xlab="Confidence level", ylab="Number of rules found", 
+               main="support 5%") +
+  theme_bw()
+
+# Number of rules found with a support level of 1%
+plot1 <- qplot(confidence, support1, geom=c("point", "line"), 
+               xlab="Confidence level", ylab="Number of rules found", 
+               main="support 1%") + 
+  theme_bw()
+
+# Number of rules found with a support level of 0.5%
+plot0.5 <- qplot(confidence, support0.5, geom=c("point", "line"), 
+               xlab="Confidence level", ylab="Number of rules found", 
+               main="support 0.5%") + 
+  theme_bw()
+
+# Subplot
+grid.arrange(plot5,plot1,plot0.5, ncol=3)
+
+#Data frame
+num_rules <- data.frame(support5, support1, support0.5, confidence)
+
+# Number of rules found with a support level of 5%, 1% and 0.5%
+ggplot(data=num_rules, aes(x=confidence)) +
+  
+  # Plot line and points (support level of 5%)
+  geom_line(aes(y=support5, colour="Support level of 5%")) +
+  geom_point(aes(y=support5, colour="Support level of 5%")) +
+  
+  # Plot line and points (support level of 1%)
+  geom_line(aes(y=support1, colour="Support level of 1%")) + 
+  geom_point(aes(y=support1, colour="Support level of 1%")) +
+  
+  # Plot line and points (support level of 0.5%)
+  geom_line(aes(y=support0.5, colour="Support level of 0.5%")) +
+  geom_point(aes(y=support0.5, colour="Support level of 0.5%")) +
+  
+  # Labs and theme
+  labs(x="Confidence levels", y="Number of rules found", 
+       title="Apriori algorithm with different support levels\n Oleh Kevin Gabriel Florentino 00000043270") +
+  theme_bw() +
+  theme(legend.title=element_blank())
+
+# Support yang terbaik adalah 1% 
+# Confidence yang terbaik adalah 50%
+
+#e--------------------
+bestapriori <- apriori(Groceries, parameter=list(sup=0.01, conf=0.5, target="rules"))
+
+#f--------------------
+
+# Scatter plot
+plot(bestapriori, measure=c("support", "lift"), shading="confidence")
+
+# Graph (default layout)
+plot(bestapriori, method="graph")
+
+# Graph (circular layout)
+plot(bestapriori, method="graph", control=list(layout=igraph::in_circle()))
+
+```
+
+```{r fig, fig.height=5}
+# Grouped matrix plot
+plot(bestapriori, method="grouped")
+```
+```{r}
+# Graph paralel coordinates
+plot(bestapriori, method="paracoord", control=list(reorder=TRUE))
+
+
+```
+
+

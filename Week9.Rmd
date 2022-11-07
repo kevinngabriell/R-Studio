@@ -1,0 +1,297 @@
+---
+title: "Week 9 Clustering DBSCAN"
+author: "Kevin Gabriel Florentino 00000043270"
+date: "2021"
+output: openintro::lab_report
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(tidyverse)
+library(readxl)
+library(knitr) 
+```
+
+* Ganti bagian author dengan nama lengkap dan NIM
+* Save file Rmd ini dengan format: B_Lab9_KenDedes_123456.Rmd
+
+SOAL A.1. 
+----------------------------------------------
+
+Dalam penerapan clustering, kmeans sensitif terhadap data yang berbeda skala dan besaran. Sebaiknya sebelum menerapkan kmeans, data terlebih dulu distandardisasi.
+
+a. Load semua library yang digunakan. 
+Gunakan NIM anda untuk membuat 1000 bilangan dari distribusi Gaussian. Untuk kolom x gunakan mean 100 dan simpangan baku 20. Untuk kolom y gunakan mean 50 dan simpangan baku 2. Hitung mean dan simpangan baku masing-masing kolom dan namakan data frame ini **dat**. Split data training vs testing 80% dan 20%.
+b. Gunakan metode average sillhoutte width untuk mencari jumlah klaster optimal. Lakukan kmeans dengan jumlah klaster sesuai dengan rekomendasi metode average sillhoutte width dan nstart = 25. Plot cluster dengan menggunakan warna yang berbeda atau simbol yang berbeda. 
+c. Standardisasi data pada tiap kolom dengan menggunakan **scale()**. Gunakan metode average sillhoutte width untuk mencari jumlah klaster optimal. Lakukan kmeans dengan jumlah klaster sesuai dengan rekomendasi metode average sillhoutte width dan nstart = 25. Plot cluster dengan menggunakan warna yang berbeda atau simbol yang berbeda. 
+d. Apakah terjadi perbedaan jumlah klaster optimal?
+e. Gunakan metode DBSCAN untuk melakukan clustering pada data di atas.
+
+
+```{r}
+#a-----------
+#Load Libraries----------------
+library(dbscan)
+library(fpc)
+library(cluster) 
+library(factoextra)
+library(gridExtra)
+library(tictoc)
+
+#Set Seed-------------
+NIM <- 043270
+set.seed(NIM)
+
+#Generate Data-------------
+n <- 1000
+x <- rnorm(n, mean = 100, sd = 20)
+y <- rnorm(n, mean = 50, sd = 2)
+dat <- data.frame(x,y)
+
+#Structure Data-------------
+str(dat)
+
+#Summarized Data-------------
+summary(dat)
+
+#Calculate Mean-------------
+(meanx <- mean(dat$x))
+(meany <- mean(dat$y))
+
+#Calculate Standard Deviation (SD)-------------
+(sdx <- sd(dat$x))
+(sdy <- sd(dat$y))
+
+#Split Data-------------
+sampl <- sample(nrow(dat), 0.8 * nrow(dat), replace = FALSE)
+
+#Set Training and Testing Data-------------
+training <- dat[sampl,]
+testing <- dat[-sampl,]
+
+#b----
+#Calculate Data-------------
+avg_sil <- function(k) {
+   km.res <- kmeans(training, centers = k, nstart = 25) 
+   ss <- silhouette(km.res$cluster, dist(training)) 
+   mean(ss[, 3]) 
+}
+
+#Compute and Plot wss for k = 2 to k = 15 
+k.values <- 2:15
+
+#Extract Avg Silhouette for 2-15 Clusters 
+avg_sil_values <- purrr::map_dbl(k.values, avg_sil) 
+plot(k.values, avg_sil_values, 
+     type = "b", pch = 19, frame = FALSE, 
+     xlab = "Number of clusters K", 
+     ylab = "Average Silhouettes", ylim = c(0,1)) 
+fviz_nbclust(training, kmeans, method = "silhouette") 
+
+#Jumlah Cluster Optimal = 2
+
+#Clustering dengan Menggunakan Algoritma K-means
+output <- kmeans(training, 2, iter.max = 10, nstart = 25)
+print(output)
+
+fviz_cluster(output, data = training)
+
+#c----
+#Scale Data
+scaledTraining <- scale(training)
+avg_sil <- function(k) {
+   km.res <- kmeans(scaledTraining, centers = k, nstart = 25) 
+   ss <- silhouette(km.res$cluster, dist(scaledTraining)) 
+   mean(ss[, 3]) 
+} 
+
+#Compute and Plot wss for k = 2 to k = 15 
+k.values <- 2:15
+
+#Extract Avg Silhouette for 2-15 Clusters 
+avg_sil_values <- purrr::map_dbl(k.values, avg_sil) 
+plot(k.values, avg_sil_values, 
+     type = "b", pch = 19, frame = FALSE, 
+     xlab = "Number of clusters K", 
+     ylab = "Average Silhouettes", ylim = c(0,1)) 
+fviz_nbclust(scaledTraining, kmeans, method = "silhouette")
+
+#Jumlah Cluster Optimal = 3
+
+#Scatter Plot
+output1 <- kmeans(scaledTraining, 3, iter.max = 10, nstart = 25) 
+
+fviz_cluster(output1, data = scaledTraining)
+
+#d---
+#Ya, terdapat perbedaan pada jumlah kluster optimal dimana terjadi perubahan dari 2 ke 3 pada saat data belum dilakukan scale.
+
+#e---
+#No Scaling-----------
+#Calculate Suitable Epsilon
+dbscan::kNNdistplot(training, k = 2)
+epsilon <- 2
+abline(h = epsilon, lty = 2)
+
+#Perform DBScan------------
+db <- fpc::dbscan(training, eps = epsilon, MinPts = 5)
+db
+
+dbdb <- dbscan::dbscan(training, eps = epsilon, minPts = 10)
+dbdb
+
+#Plot
+factoextra::fviz_cluster(db, data = training, show.clust.cent = TRUE,
+                         geom = "point", palette = "jco", ggtheme = theme_classic())
+
+#With Scaling------------
+#Calculate Suitable Epsilon
+dbscan::kNNdistplot(scaledTraining, k = 3)
+epsilon <- 0.3
+abline(h = epsilon, lty = 2)
+
+#Perform DBScan------------
+db1 <- fpc::dbscan(scaledTraining, eps = epsilon, MinPts = 5)
+db1
+
+#Plot
+factoextra::fviz_cluster(db1, data = scaledTraining, show.clust.cent = TRUE,
+                         geom = "point", palette = "jco", ggtheme = theme_classic())
+```
+
+
+SOAL A.2.
+-----------
+
+Data diabetes pada penduduk Indian Pima pada sheet *diabetes* file *IS388Lab.xlsx* diambil dari laman <https://archive.ics.uci.edu/ml/datasets/diabetes>. 
+Gunakan DBSCAN untuk membuat clustering.
+
+a. Load semua package yang diperlukan.
+b. Impor data dan lakukan exploratory data analysis.
+c. Gunakan NIM anda sebagai seed. Split training vs testing 80% vs 20%.
+d. Terapkan algoritma DBSCAN untuk membuat 2 cluster. Carilah epsilon yang sesuai.
+e. Buatlah visualisasi cluster.
+f. Apakah terdapat outlier pada data? Tampilkan data yang merupakan outlier dan buatlah plotnya.
+g. Lakukan validasi eksternal dengan membuat confusion matrix. Berikan komentar mengenai akurasi dan sensitivity.
+
+```{r}
+#a. Load Libraries---------
+library(readxl)
+library(dbscan)
+library(fpc)
+library(factoextra)
+library(ggplot2)
+library(gridExtra)
+library(rstatix)
+library(ggpubr)
+library(caret)
+library(GGally)
+
+#b. Import Data-----------
+diab <- read_excel("IS388Lab.xlsx", sheet = "diabetes")
+
+#Exploratory Data Analysis----------
+str(diab)
+summary(diab)
+head(diab)
+tail(diab)
+ggpairs(diab)
+
+#Optional----------
+#Wilcoxon Test
+wilcox.test(diab$Pregnancies, diab$Outcome, paired = TRUE) #p.value = 2.2e-16
+wilcox.test(diab$Glucose, diab$Outcome, paired = TRUE) #p.value = 2.2e-16
+wilcox.test(diab$BloodPressure, diab$Outcome, paired = TRUE) #p.value = 2.2e-16
+wilcox.test(diab$SkinThickness, diab$Outcome, paired = TRUE) #p.value = 2.2e-16
+wilcox.test(diab$Insulin, diab$Outcome, paired = TRUE) #p.value = 2.2e-16
+wilcox.test(diab$BMI, diab$Outcome, paired = TRUE) #p.value = 2.2e-16
+wilcox.test(diab$DiabetesPedigreeFunction, diab$Outcome, paired = TRUE) #p.value = 3.822e-08
+wilcox.test(diab$Age, diab$Outcome, paired = TRUE) #p.value = 2.2e-16
+
+#Hasil uji Wilcoxon untuk menunjukkan terdapat perbedaan yang signifikan antara pasien yang tidak menderita diabetes dan pasien yang menderita diabetes (p.value < alpha).
+
+#c. Split Data----
+NIM <- 043270
+set.seed(NIM)
+samp <- sample(nrow(diab), 0.8 * nrow(diab), replace = FALSE)
+
+#Set Training and Testing Data-------------
+train <- diab[samp,]
+test <- diab[-samp,]
+
+#d. Find Epsilon and Perform DBSCAN-------
+#Calculate Suitable Epsilon
+dbscan::kNNdistplot(train, k = 2)
+epsilon <- 50
+abline(h = epsilon, lty = 2)
+
+#Perform DBScan------------
+db2 <- dbscan::dbscan(train, eps = epsilon, MinPts = 5)
+db2
+
+#e. Visualize Cluster---------
+factoextra::fviz_cluster(db2, data = train, show.clust.cent = TRUE,
+                         geom = "point", palette = "jco", ggtheme = theme_classic())
+
+#f. Indicate Outliers and Show the Data-----------
+#Pregnancies vs Outcome
+out1 <- boxplot(Pregnancies ~ Outcome, data = train, plot = FALSE)$out
+out1
+boxplot(Pregnancies ~ Outcome, data = train)
+
+out2 <- boxplot(Glucose ~ Outcome, data = train, plot = FALSE)$out
+out2
+boxplot(Glucose ~ Outcome, data = train)
+
+out3 <- boxplot(BloodPressure ~ Outcome, data = train, plot = FALSE)$out
+out3
+boxplot(BloodPressure ~ Outcome, data = train)
+
+out4 <- boxplot(SkinThickness ~ Outcome, data = train, plot = FALSE)$out
+out4
+boxplot(SkinThickness ~ Outcome, data = train)
+
+out5 <- boxplot(Insulin ~ Outcome, data = train, plot = FALSE)$out
+out5
+boxplot(Insulin ~ Outcome, data = train)
+
+out6 <- boxplot(BMI ~ Outcome, data = train, plot = FALSE)$out
+out6
+boxplot(BMI ~ Outcome, data = train)
+
+out7 <- boxplot(DiabetesPedigreeFunction ~ Outcome, data = train, plot = FALSE)$out
+out7
+boxplot(DiabetesPedigreeFunction ~ Outcome, data = train)
+
+out8 <- boxplot(Age ~ Outcome, data = train, plot = FALSE)$out
+out8
+boxplot(Age ~ Outcome, data = train)
+
+#New Dataframe
+new <- data.frame(db2$cluster, train)
+new <- subset(new, db2$cluster == 0)
+new
+
+#Show Outliers
+factoextra::fviz_cluster(db2, data = train, show.clust.cent = TRUE, 
+                         geom = "point", palette = "jo", ggtheme = theme_classic()) + 
+   labs(subtitle = "The Black Points Symbolizes The Outliers")
+
+#g. Validation---------
+#Pred vs Truth
+newdata <- data.frame(db2$cluster, train$Outcome)
+newdata <- subset(newdata, db2$cluster != 0)
+newdata$db2.cluster <- ifelse(newdata$db2.cluster == 1, 0, 1)
+str(newdata)
+
+dataDb2 <- as.factor(newdata$db2.cluster)
+outcome <- as.factor(newdata$train.Outcome)
+
+confusionMatrix(dataDb2, outcome)
+
+#Accuracy = 0.6617
+#Sensitivity for Class 1 (diabetic) is 0.99242.
+```
+
+

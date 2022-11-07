@@ -1,0 +1,285 @@
+---
+title: "Jawaban Lab 3: Naive Bayes"
+author: "CL Kevin Gabriel Florentino 00000043270"
+date: "2021"
+output: openintro::lab_report
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(readxl)
+library(knitr) 
+
+library(psych)
+library(Amelia)
+library(mice)
+library(klaR)
+library(vcd)
+
+library(GGally)
+```
+
+
+
+
+### SOAL A1 (Jawaban boleh dishow di layar tapi tidak diberikan)
+
+Berikut kita analisis data diabetes dari India yang diperoleh dari kaggle.com
+Deskripsi data diabetes.csv.
+
+This dataset describes the medical records for Pima Indians
+and whether or not each patient will have an onset of diabetes within ve years.
+Fields description follow:
+
+preg = Number of times pregnant
+plas = Plasma glucose concentration a 2 hours in an oral glucose tolerance test
+pres = Diastolic blood pressure (mm Hg)
+skin = Triceps skin fold thickness (mm)
+test = 2-Hour serum insulin (mu U/ml)
+mass = Body mass index (weight in kg/(height in m)^2)
+pedi = Diabetes pedigree function
+age = Age (years)
+class = Class variable (1:tested positive for diabetes, 0: tested negative for diabetes)
+
+Perintah:
+
+a. Baca data dari file diabetes.csv ke MyData, Pelajari struktur file.
+b. Ubah outcome variables as categorical
+c. Pelajari isi data gunakan fungsi describe()
+d. Bila dicermati, nilai minimum Glucose, Bloodpressure, Skinthickness, 
+   Insulin, and BMI adalah nol. Ini salah, karena tidak ada tidak ada orang yang glucosenya 
+   nol. Untuk itu, Ganti semua nilai nol pada field-field ini dengan NA (missing observation).
+e. Visualisasikan missing observation
+f. gunakan mice package to predict missing values dengan method rf
+g. Transfer setiap hasil prediksi missing values into the main data set. Periksa ulang apakah  masih ada missing observation?
+h. Visualisasikan Age Distribution by Outcome
+i. Viusalisasikan Pregnancy Distribution by Outcome
+j. Visualisasi BMI Distribution by Outcome
+k. Visualisasi Glucose Distribution by Outcome
+l. visualisasi seluruh fields dgn ggpairs
+m. Split training:testing=75:25, periksa ulang kebenaran split
+n. Bentuk model NB Classifier untuk Outcome
+o. evaluasi model NB dengan confusion matrix
+
+**Jawaban**    
+
+```{r}
+#a-------
+MyData<- read.csv(file='diabetes.csv')
+str(MyData)
+as.numeric()
+
+
+#b-------
+#Setting outcome variables as categorical
+MyData$Outcome <- factor(MyData$Outcome, levels = c(0,1), labels = c("False", "True"))
+
+#c-----Studying the structure of the data
+str(MyData)
+head(MyData)
+#install.packages('psych')
+library(psych)
+describe(MyData)
+
+#d------------
+#Convert '0' values into NA
+MyData[, 2:7][MyData[, 2:7] == 0] <- NA
+
+
+#e----------------------------
+#visualize the missing data
+#install.packages('Amelia')
+library(Amelia)
+missmap(MyData)
+
+
+#f---prediksi nilai missing observation
+#Use mice package to predict missing values
+#install.packages('mice')
+library(mice)
+mice_mod <- mice(MyData[, c("Glucose","BloodPressure","SkinThickness","Insulin","BMI")], method='rf')
+mice_complete <- complete(mice_mod)
+
+#g---Transfer the predicted missing values into the main data set
+MyData$Glucose <- mice_complete$Glucose
+MyData$BloodPressure <- mice_complete$BloodPressure
+MyData$SkinThickness <- mice_complete$SkinThickness
+MyData$Insulin<- mice_complete$Insulin
+MyData$BMI <- mice_complete$BMI
+
+
+#Double Check
+missmap(MyData)
+
+#h Visualisasi Age
+ggplot(MyData, aes(Age, colour = Outcome)) +
+  geom_freqpoly(binwidth = 1) + labs(title="Age Distribution by Outcome")
+
+
+#i Visualisasi Pregnancy Distribution by Outcome
+PDis <- ggplot(MyData, aes(x=Pregnancies, fill=Outcome, color=Outcome)) +
+  geom_histogram(binwidth = 1) + labs(title="Pregnancy Distribution by Outcome")
+PDis + theme_bw()
+
+
+#j--Visualisasi BMI Distribution by Outcome
+BDis <- ggplot(MyData, aes(x=BMI, fill=Outcome, color=Outcome)) +
+  geom_histogram(binwidth = 1) + labs(title="BMI Distribution by Outcome")
+BDis + theme_bw()
+
+
+#k----Visualisasi Glucose Distribution by Outcome
+ggplot(MyData, aes(Glucose, colour = Outcome)) +
+  geom_freqpoly(binwidth = 1) + labs(title="Glucose Distribution by Outcome")
+
+
+#l---visualisasi pairs dgn ggpairs
+#install.packages('GGally')
+library(GGally)
+ggpairs(MyData)
+
+
+#m----NB Classifier for Outcome
+NIM=043270
+set.seed(NIM) #gunakan NIM
+indxTrain <- sample(nrow(MyData), 0.75 * nrow(MyData))   
+training <- MyData[indxTrain,]
+testing <- MyData[-indxTrain,] 
+#Check dimensions of the split 
+prop.table(table(MyData$Outcome)) * 100
+prop.table(table(training$Outcome)) * 100
+prop.table(table(testing$Outcome)) * 100
+nrow(testing)/nrow(MyData)*100
+
+
+#n-----NBC for Outcome
+library(klaR)
+nb_mod <- NaiveBayes(Outcome ~ ., data=training)   
+pred <- predict(nb_mod, testing)                   
+nb_mod
+
+
+
+
+
+#o evaluasi model NB
+
+library(caret)
+#---------------------Confusion Matrix------------------------
+tab <- table(pred$class, testing$Outcome)          # buat table dulu
+caret::confusionMatrix(tab)                        # buat confusion matrix  
+#---------------------Confusion Matrix------------------------
+  
+
+```
+
+### SOAL A2 (Jawaban tidak boleh dishow di layar)
+
+Kita lanjutkan data dari soal A1.
+
+a. Buatlah experiment 2 fold validation secara manual
+b. Hitung akurasi experiment 1
+c. Hitung akurasi experiment 2
+d. Hitung akurasi rata-rata experiment 1 dan 2
+
+```{R}
+#a---------experiment 1
+nim = 043270         
+set.seed(nim)    
+samp <- sample(nrow(MyData), 0.5 * nrow(MyData))
+trainingA <- MyData[samp, ] #buat training
+testingA <- MyData[-samp, ] #buat testing
+
+
+#b--------akurasi experiment 1
+nb_mod <- e1071::naiveBayes(Outcome ~ ., data=trainingA)
+pred <- predict(nb_mod, testingA) 
+tab <- table(pred, testingA$Outcome) 
+caret::confusionMatrix(tab) 
+satuexp <- caret::confusionMatrix(tab)
+akurasiexsatu <- satuexp$overall[1] 
+
+
+
+#c-------experiment 2
+nb_mod <- e1071::naiveBayes(Outcome ~ ., data=testingA)
+pred <- predict(nb_mod, trainingA)
+tab <- table(pred, trainingA$Outcome)
+caret::confusionMatrix(tab)
+duaexp <- caret::confusionMatrix(tab)
+
+
+#akurasi experiment 2
+
+akurasiexdua<-duaexp$overall[1] 
+
+
+#d--------------akurasi rata-rata
+
+(ratarata=(akurasiexsatu+akurasiexdua)/2)
+
+```
+
+
+### SOAL A3
+
+
+a. Bacalah data **Arthritis** dari package **vcd**. Tampilkan struktur data dan beberapa baris data.
+b. Split data dengan menggunakan 6 digit terakhir NIM anda sebagai seed. Split training testing 80 20.
+c. Buatlah model Naive Bayes dengan Improved sebagai dependent variable dan variabel lain selain variabel ID sebagai independent variable.
+d. Buatlah confusion matrixnya. Berapa akurasinya? Apa yang bis anda simpulkan mengenai sensitivity dan specificity untuk masing-masing kelas? (Improved, Marked, None)
+e. Buatlah confusion matrix plotnya.
+
+
+```{r}
+#a-------------
+library(vcd)
+
+Arth <- Arthritis
+str(Arth)
+head(Arth)
+head(Arth)
+tail(Arth)
+
+#b--------------
+set.seed(043270)
+n <- NROW(Arth)
+samples <- sample(n, 0.8 * n)
+trainArth <- Arth[samples,]
+testArth <- Arth[-samples,]
+
+#c-------------
+naive <- klaR::NaiveBayes(Improved ~ Treatment + Sex + Age, data = trainArth)
+prediction <- predict(naive, testArth)
+
+
+#d---------------------Confusion Matrix------------------------
+
+library(caret)
+
+tables <- table(prediction$class, testArth$Improved)
+caret::confusionMatrix(tables)
+
+
+#accuracy 0.6471 
+#sensitivity untuk Marked class 0.4000
+#specificity untuk None class 0.5000
+
+
+#e-------------- Plot the Confusion Matrix ------------------
+# library(ggplot2)
+
+library(ggplot2)
+
+testArth$prediction <- prediction$class
+ggplot(testArth, aes(Improved, prediction, color = Improved)) +
+  geom_jitter(width = 0.2, height = 0.1, size = 2) +
+  labs(title = "Confusion Matrix",
+       subtitle = "Predicted vs Observed from Arthritis Dataset",
+       y = "Predicted",
+       x = "Truth",
+       caption = "oleh Kevin Gabriel Florentino 00000043270")
+
+```
+

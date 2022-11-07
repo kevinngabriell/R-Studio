@@ -1,0 +1,354 @@
+---
+title: "Jawaban Siswa Week 3 Visualizing Multiple Variable in R"
+author: "IS240C Kevin Gabriel Florentino
+date: "2021"
+output:
+  # pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+*******************************************************
+Nama    : Kevin Gabriel Florentino   
+NIM     : 00000043270   
+Date    : 25 Agustus 2021   
+Asisten: Isabella Donita Hasan dan Natanael Benediktus .    
+Waktu   : Max 200 menit   
+*********************************************************
+
+
+Petunjuk untuk Asisten:   
+------------------------
+
+1. 15 menit pertama Bagikan semua Markdown file minggu ini distribusikan ke masing-masing 
+PC mahasiswa.
+2. Jelaskan apa yang harus dikerjakan oleh mahasiswa dan dimana hasil kerjaan harus disimpan.
+3. Jelaskan jam berapa harus dikumpulkan dan dimana file harus disimpan.   
+4. Mahasiswa mengerjakan WAJIB mengerjakan A1, B1, dan C1 dan jawaban boleh dishow
+oleh Asisten.
+5. Asisten memilih satu atau dua soal lagi per masing-masing section. 
+sebagai KEWAJIBAN mahasiswa menegerjakan di lab.
+6. Sisa soal boleh dikerjakan di luar lab sebagai PR dikumpulkan minggu depan.
+7. Setelah waktu max 4x50 menit atau 3 jam 20 menit itu diadakan penarikan file.   
+8. Mahasiswa Boleh mengumpulkan sebelum waktu lab selesai, namun langsung diperiksa oleh asisten lab.
+9. Lakukan presensi 15 menit sebelum jam berakhir. 
+
+Petunjuk untuk Mahasiswa:   
+------------------------
+
+1. Nyalakan dan periksa PC kalau ada problem laporkan ke Asisten dan pindah ke PC yang lain.
+2. Dapatkan dari asistent dan rename file markdown ini dengan lab02_vis2_NAMA_NIM.Rmd   
+3. Isi dulu data-data kamu di atas!
+4. Mahasiswa mengerjakan WAJIB mengerjakan A1, B1, dan C1 dan jawaban boleh dishow
+oleh Asisten.
+5. Asisten memilih satu atau dua soal lagi per masing-masing section sebagai KEWAJIBAN mahasiswa menegerjakan di lab.
+6. Sisa soal boleh dikerjakan di luar lab sebagai PR dikumpulkan minggu depan.
+7. Kerjakan soal-soal yang bisa dulu dengan benar.
+8. Isilah jawabanmu di area {R} yang berwarna abu-abu.
+9. Kalau mengalami kesulitan, silakan cari solusi diinternet/buku catatan dll.
+10. Maximal mengerjakan sesi ini dan sesi lainnya adalah 200 menit (3 jam 20 menit).
+11. Bila sudah selesai dan yakin benar, silakan simpan ditempat yang ditentukan oleh asisten.
+
+Tatacara Penilaian Praktek di Lab:
+-----------------------------------
+   
+1. Cara penilaian praktikum: 
+   a. Setiap praktek di lab tidak dinilai kecuali quiz di minggu ke 7, 13.
+   b. Setiap mahasiswa wajib mengerjakan 2 soal per sesi (A, B, C dst).  Di week 2 ini minimal 6 soal yang harus selesai di lab.   
+      b.1. Bila selesai saat di lab maka mahasiswa akan ikut dipresensi.   
+      b.2. mahasiswa hadir namun tidak dikumpulkan/tidak selesai maka tidak dipresensi.   
+      b.3. mahasiswa absen, otomatis tidak dipresensi.   
+2. a. Mahasiswa wajib datang di saat quiz diadakan di lab.
+   b. Mahasiswa yang absen disaat quiz, nilai quiz tsb=0.01, dan tidak ada quiz pengganti/susulan.
+3. Tugas dapat dilihat di RPKPS LAB dikumpulkan minggu ke 14.
+4. UTS berupa ujian di lab (atau online) dapat dilihat di RPKPS.
+5. UAS berupa ujian di lab (atau online) dapat dilihat di RPKPS.
+
+=================     
+A Diagram Boxplot   
+=================   
+
+Soal A1.(Jawaban boleh dishow di layar tapi tidak diberikan)
+------------------------------------------------------------------
+
+Suatu toko didatangi customer selama bulan Juni sbb:   
+10,21,32,24,25,16,27,18,29,30,
+16,25,23,43,53,15,17,28,19,22,
+18,23,31,44,15,33,56,26,12,33
+
+a.Buatlah Boxplotnya!
+b.Hitung Minimal, Q1, Median, Mean, Q3,dan Max.
+
+Jawab:
+
+```{r}
+# -----------------------Persiapan------------------------
+juni <- c(10,21,32,24,25,16,27,18,29,30,16,25,23,43,53,15,17,28,19,22,18,23,31,44,15,33,56,26,12,33)
+
+# ---------------------Show time---------------------------
+boxplot(juni, main = "Jumlah Customer Bulan Juni oleh Kevin Gabriel Florentino 00000043270", xlab = "Bulan", ylab = "Jumlah", type = "o", ylim = c(10,60), col = c("lightblue"))
+
+summary(juni)
+```
+
+Soal A2 (Jawaban TIDAK BOLEH dishow)
+-------------------------------------
+
+Data Penjualan dari sebuah Dealer Mobil Tahun 2018:
+Cabang    JAN   FEB  MAR  APR  MEI  JUN  JUL  AGS   SEPT OKT  NOV  DES
+Jakarta     3     5    4    5    5    1    4   10      2   5    6    3
+Surabaya    1     2    1    2    1    1    5    1      3   1    1    2
+
+Buatlah diagram Boxplotnya!   
+
+a. 2 boxplot secara berdampingan
+b. 2 boxplot dalam 1 diagram
+
+Catatan:
+
+- Judul Boxplot terakhir diberi tambahan "oleh <nama> <nim>"
+- warna Jakarta Merah, Surabaya Hijau
+- tinggi sumbu vertikal harus sama
+
+Jawab:
+
+```{r}
+# -----------------------preparation--------------
+Jakarta <- c(3,5,4,5,5,1,4,10,2,5,6,3)
+Surabaya <- c(1,2,1,2,1,1,5,1,3,1,1,2)
+
+# -----------------------2 boxplot secara berdampingan ----------------
+par(mfrow = c(1,2))
+boxplot(Jakarta, main = "Data Distribusi penjualan mobil di Jakarta Tahun 2018 oleh Kevin Gabriel Florentino 00000043270", xlab = "Jakarta", ylab = "Unit", col = "red")
+boxplot(Surabaya, main = "Data Distribusi penjualan mobil di Surabaya Tahun 2018 oleh Kevin Gabriel Florentino 00000043270", xlab = "Surabaya", ylab = "Unit", col = "green")
+
+# -----2 boxplot dalam 1 diagram-----
+boxplot(Jakarta, Surabaya, main = "Data Distribusi penjualan mobil di Jakarta vs Surabaya Tahun 2018 oleh Kevin Gabriel Florentino 00000043270", names = c("Jakarta","Surabaya"), xlab = "Kota", ylab = "Unit", col = c("red","green"))
+
+  
+```
+
+Soal A3 (Jawaban TIDAK BOLEH dishow)
+-------------------------------------
+
+Anda diberikan data kedatangan turis ke Indonesia melalui pelabuhan udara tahun 2018 melalui berbagai Airport di Indonesia.   
+
+Soal:
+
+A3.a. Buatlah diagram batang untuk menemukan 5 Pelabuhan udara dengan kontribusi kedatangan turis terbesar selama 2018 
+A3.b. Gunakan data dari kelima airport di atas kemudian buatlah boxplot untuk bulan Januari sd Desember 2018. Di bulan mana saja terjadi ourlier?
+
+Catatan:
+- setiap judul harus ada oleh <nama><nim>
+
+Jawab: 
+
+```{r}
+
+#A3.a:
+airport <- read.csv("D:\\download\\dataweek3.csv", header = TRUE, sep = ";")
+air <- airport[1:5,]
+air1 <- rowSums(air[,-1])
+
+barplot(air1, main="5 Pelabuahn Udara Kontribusi Terbesar 2018 oleh Kevin Gabriel Florentino 00000043270", xlab="Pelabuhan Udara",ylab="Jumlah Turis", names = c("Ngurah Rai","Soekarno-Hatta","Juanda","Kualanamu","Husein Sastranegara"), col = c(1:5), cex.main=0.7)
+
+
+
+#A3.b: outliers terjadi di bulan ....
+
+boxplot(air$Januari,air$Februari,air$Maret,air$April,air$Mei,air$Juni,air$Juli,air$Agustus,air$September,air$Oktober,air$November,air$Desember,col = c("red","yellow","Green","blue","purple"),main = "Kontribusi kKedatangan Turis di Pelabuhan Udara Terbanyak Selama 2018 oleh Kevin Gabriel Florentino 00000043270",xlab = "Pelabuhan Udara",ylab = "Bulan", cex.main = 0.8)
+
+
+
+
+```
+
+Soal A4 (Jawaban TIDAK BOLEH dishow)
+-----------------------------------
+
+Anda diberikan data Manufaktur dari file IS388Lab.xslx sheet Manufacturer.
+
+Soal: 
+
+a. Buatlah boxplot untuk menggambarkan ValueAddedbyMfg berdasarkan IndusGrp.
+b. Hitung median ValueAddedbyMfg untuk masing-masing Kelompok industri. Kelompok industri mana yang memiliki median ValueAddedbyMfg tertinggi? Kelompok industri mana yang memiliki median ValueAddedbyMfg terendah?
+c. Hitung IQR untuk variabel yang sama seperti pada nomor b. Kelompok industri mana yang memiliki rentang interkuartil (IQR) terbesar dan terkecil?
+d. Kelompok industri mana yang memiliki outlier?
+
+Catatan:   
+- setiap judul harus ada oleh <nama><nim>
+
+```{r}
+
+#a--------
+   library(readxl)
+   Indus <- read_excel("IS388Lab.xlsx", sheet = "Manufacturer")
+   
+   boxplot(Indus$ValueAddedbyMfg~Indus$IndusGrp, main= "Diagram ValueAddedbyMfg terhadap IndusGrp oleh Kevin Gabriel Florentino 00000043270")
+   
+#b-----
+   aggregate(Indus$ValueAddedbyMfg~Indus$IndusGrp,data=Indus, median)
+
+#Median tertinggi: IndusGrp 9 dengan median 20796.0
+#Median terendah: IndusGrp 12 dengan median 328.0
+
+
+#c-------
+
+   aggregate(Indus$ValueAddedbyMfg~Indus$IndusGrp,data=Indus, IQR)
+   
+#IQR tertinggi = 18 pada IndusGrp 24526.00 
+#IQR terendah = 12  pada IndusGrp 832.50
+
+#d-----
+   
+   
+#Kelompok industri yang memiliki outlier adalah sebagai berikut: 1, 3, 6, 9, 11, 13, 14, 16, 17, 18
+
+
+```
+
+
+
+=================   
+B Diagram Scatter   
+=================   
+
+Soal B1. (Jawaban boleh dishow di layar tapi tidak diberikan)
+------------------------------------------------------
+
+Gunakan data cars pada R. Bualah Scatter Diagram untuk menunjukkan hubungan antara Kecepatan dan jarak Tempuh. 
+
+Catatan:
+
+a. Warna merah
+b. Batas Vertikal 150
+c. Batas Horisontal 30
+
+Jawab:
+
+```{r}
+# -----------------------Persiapan------------------------------
+   datacars<- cars
+
+# -------------Show Time------------------------
+
+   plot(datacars$speed,datacars$dist,xlim =c(0,30), ylim = c(0,150),main="Hubungan Kecepatan dan Jarak Tempuh oleh Kevin Gabriel Florentino 00000043270",col="red")
+```
+
+Soal B2 (Jawaban TIDAK BOLEH dishow)
+---------------------------------------
+
+Suatu percobaan oleh siswa A menggunakan suhu 152,150,156,157,154,151,153,156,152,155 derajat Celcius menyebabkan pemuaian logam 5.2,5.3,5.5,5.7,5.3,5.6,5.7,5.9,5.5,5.4 mm.    
+Suatu percobaan oleh siswa B menggunakan suhu 132,130,136,137,134,141,143,146,142,145 derajat Celcius menyebabkan pemuaian logam 2.2,2.3,2.5,2.7,2.3,4.6,4.7,4.9,4.5,4.4 mm. 
+
+Buatlah diagram scatternya antara suhu dan pemuaian!
+
+a. secara berdampingan
+b. menjadi 1 diagram
+
+Catatan:
+
+- Batas sumbu mendatar 100-160
+- Batas sumbu vertikal 0-6
+- Percobaan oleh siswa A warna merah
+- Percobaan oleh siswa B warna hitam
+
+Jawab:
+
+```{r}
+# -----------------------Persiapan------------
+par(mfrow=c(1,2))
+ShA<-c(152,150,156,157,154,151,153,156,152,155)
+PmA <- c(5.2,5.3,5.5,5.7,5.3,5.6,5.7,5.9,5.5,5.4 )
+
+ShB<-c (132,130,136,137,134,141,143,146,142,145)
+PmB<- c(2.2,2.3,2.5,2.7,2.3,4.6,4.7,4.9,4.5,4.4)
+
+# a---------------------secara berdampingan-----------------
+
+plot(ShA,PmA,main="Diagram Antara Suhu dan Pemuaian Siswa A oleh Kevin Gabriel Florentino 00000043270",xlab="Celcius",ylab="mm",col="red",xlim= c(100,160), ylim = c(0,6))
+plot(ShB,PmB,main="Diagram Antara Suhu dan Pemuaian Siswa B oleh Kevin Gabriel Florentino 00000043270",xlab="Celcius",ylab="mm",col="Black",xlim= c(100,160), ylim = c(0,6))
+
+
+# b---------------------menjadi 1 diagram------------
+par(mfrow=c(1,2))
+plot(ShA,PmA, col="red", main="Diagram Antara Suhu dan Pemuaian oleh Kevin Gabriel Florentino 00000043270",xlab= "Celcius", ylab= "mm", xlim = c(100,160), ylim = c(0,6))
+points(ShB,PmB, col="black", main="Diagram Antara Suhu dan Pemuaian oleh Kevin Gabriel Florentino 00000043270",xlab= "Celcius", ylab= "mm", xlim = c(100,160), ylim = c(0,6))
+
+
+```
+
+Soal B3 (Jawaban TIDAK BOLEH dishow)
+----------------------------------------
+
+Perintah
+
+a. Buatlah scatter plot ValueAddedbyMfg (pd sumby y) vs CostofMaterial (pd sumbu x) dengan menggunakan package **ggplot2**. Berikan judul plot "Hubungan antara Byknya Pekerja Produktif dgn Nilai Tambah Manufaktur" dan subjudul "Nama anda NIM".
+b. Buatlah scatter plot seperti pada nomor a dengan menggunakan package dengan menggunakan warna point yang berbeda untuk setiap ValueOfIndustShipmnts. 
+c. Buatlah scatter plot seperti pada gambar b untuk keempat nilai ValueOfIndustShipmnts sehingga keempat grafik tersebut berada pada satu baris (seperti matrix 1 x 4).
+
+```{r}
+#load library dan read data
+library(readxl)
+   library(ggplot2)
+   Manuf<- read_excel("IS388Lab.xlsx", sheet = "Manufacturer")
+
+#a----
+ggplot(Manuf, aes(x=CostofMaterials,y=ValueAddedbyMfg)) + geom_point() + ggtitle("Hubungan antara Byknya Pekerja Produktif dengan Nilai Tambah Manufaktur", sub = "oleh Kevin Gabriel Florentino 00000043270")
+
+
+#b----
+ggplot(Manuf, aes(CostofMaterials,ValueAddedbyMfg, color= ValueofIndusShipmnts)) + geom_point() + labs(title="Hubungan antara Byknya Pekerja Produktif dgn Nilai Tambah Manufaktur", subtitle =  "oleh Kevin Gabriel Florentino 00000043270")
+
+
+#c----
+ggplot(Manuf, aes(x = CostofMaterials, y = ValueAddedbyMfg)) + geom_point(aes(color = factor(ValueofIndusShipmnts)))  + ggtitle("Hubungan antara Banyaknya Pekerja Produktif dengan Nilai Tambah Manufaktur", subtitle = "oleh Kevin Gabriel Florentino 00000043270") + facet_grid(. ~ValueofIndusShipmnts)
+
+```
+
+Soal B4 (Jawaban TIDAK BOLEH dishow)
+----------------------------------------------------------
+
+Gunakan data dari file IS388Lab.xlsx, sheet covidindonesia. Gambarkan plot dengan menggunakan package ggplot2.
+
+a. Gambarkan scatter plot New Deaths per Million vs New Cases per Million.
+b. Gambarkan scatter plot New Deaths per Million vs New Cases per Million dengan warna yang berbeda untuk masing-masing pulau.
+c. Gambarkan scatter plot New Deathsvs New Cases dengan warna yang berbeda untuk masing-masing pulau dan size sesuai dengan nilai Populasi propinsi. 
+
+
+```{r}
+#load library dan read data
+   library(readxl)
+   library(ggplot2)
+   CovidIndo<- read_excel("IS388Lab.xlsx", sheet = "covidindonesia")
+
+#a----
+   
+   ggplot(CovidIndo, aes(x = `New Cases per Million`, y = `New Deaths per Million`)) + ggtitle("New Deaths per Million vs New Cases per Million") + geom_point() + labs(subtitle = "oleh Kevin Gabriel Florentino 0000004327")
+   
+
+#b----
+
+      ggplot(CovidIndo, aes(x = `New Cases per Million`, y = `New Deaths per Million`, color = Island)) + ggtitle("New Deaths per Million vs New Cases per Million") + geom_point() + labs(subtitle = "oleh Kevin Gabriel Florentino 0000004327")
+   
+   
+
+                   
+#c----
+    ggplot(CovidIndo, aes(x = `New Cases`, y = `New Deaths`, color = Island, size = Population)) + geom_point() + ggtitle("New Deaths per Million vs New Cases per Million") + labs(subtitle="oleh Kevin Gabriel Florentino 0000004327") + theme(plot.title = element_text (size = 15))
+
+
+
+```
+
+
+
+*************************************************************
+Goodluck
+
